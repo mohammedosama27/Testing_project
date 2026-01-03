@@ -133,11 +133,8 @@
          * Initialize admin dashboard
          */
         function initAdmin() {
-            // Load accounts from storage if available
-            const stored = localStorage.getItem('adminAccounts');
-            if (stored) {
-                accounts = JSON.parse(stored);
-            }
+            // Clear old cached data to ensure new names are used
+            localStorage.removeItem('adminAccounts');
             
             renderAccounts();
             updateStats();
