@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Engineering Bank - Client Account Dashboard">
+    <title>Engineering Bank - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <h1>🏦 Engineering Bank</h1>
+            <div class="navbar-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="transaction.html">Transactions</a>
+                <a href="index.html" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Notification Box -->
+        <div id="notification" class="notification">
+            <span id="notification-icon"></span>
+            <span id="notification-message"></span>
+        </div>
+
+        <!-- Account Status Card -->
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Client Account</h2>
+                <div id="statusLabel" class="status-label status-verified">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Verified</span>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="account-info">
+                <div class="info-item">
+                    <label>Client Name</label>
+                    <div class="value" id="clientName">John Doe</div>
+                </div>
+                <div class="info-item">
+                    <label>Account Number</label>
+                    <div class="value" id="accountNumber">1234567890</div>
+                </div>
+                <div class="info-item">
+                    <label>Current Balance</label>
+                    <div class="value balance" id="balance">$1,000.00</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <h3 style="margin-bottom: 1rem;">Quick Actions</h3>
+            <div class="btn-group">
+                <button id="depositBtn" class="btn btn-success" onclick="goToTransaction('deposit')">
+                    💰 Deposit
+                </button>
+                <button id="withdrawBtn" class="btn btn-primary" onclick="goToTransaction('withdraw')">
+                    💸 Withdraw
+                </button>
+                <button id="transferBtn" class="btn btn-warning" onclick="goToTransaction('transfer')">
+                    🔄 Transfer
+                </button>
+                <button id="statementBtn" class="btn btn-secondary" onclick="viewStatement()">
+                    📄 View Statement
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Activity Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Recent Activity</h2>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="activityTable">
+                    <tr>
+                        <td>2026-01-03</td>
+                        <td>Account Opening Deposit</td>
+                        <td style="color: var(--status-verified);">+$1,000.00</td>
+                        <td>$1,000.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- State Testing Controls (For UI Testing) -->
+        <div class="testing-controls">
+            <h4>🧪 UI Testing Controls - Change Account State</h4>
+            <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 1rem;">
+                Use these controls to test how the UI behaves with different account states:
+            </p>
+            <div class="state-buttons">
+                <button id="stateUnverified" class="state-btn" onclick="setAccountState('unverified')">
+                    Unverified
+                </button>
+                <button id="stateVerified" class="state-btn active" onclick="setAccountState('verified')">
+                    Verified
+                </button>
+                <button id="stateSuspended" class="state-btn" onclick="setAccountState('suspended')">
+                    Suspended
+                </button>
+                <button id="stateClosed" class="state-btn" onclick="setAccountState('closed')">
+                    Closed
+                </button>
+            </div>
+            <div style="margin-top: 1rem; padding: 0.75rem; background: white; border-radius: 6px;">
+                <strong>Current State Behavior:</strong>
+                <p id="stateBehaviorDescription" style="margin-top: 0.5rem; font-size: 0.875rem;">
+                    All transactions are enabled for verified accounts.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Dashboard JavaScript
+        // ========================================
+
+        // Current account state
+        let currentState = 'verified';
+
+        /**
+         * Initialize dashboard on page load
+         */
+        function initDashboard() {
+            // Check if user is logged in
+            const loggedIn = sessionStorage.getItem('loggedIn');
+            if (!loggedIn) {
+                // Allow access for testing, but show notification
+                showNotification('Demo mode - Login not required for testing', 'info');
+            }
+            
+            // Load user data from session
+            const username = sessionStorage.getItem('username') || 'John Doe';
+            const accountNumber = sessionStorage.getItem('accountNumber') || '1234567890';
+            const status = sessionStorage.getItem('accountStatus') || 'verified';
+            const balance = sessionStorage.getItem('balance') || '1000.00';
+            
+            // Update display
+            document.getElementById('clientName').textContent = username;
+            document.getElementById('accountNumber').textContent = accountNumber;
+            document.getElementById('balance').textContent = '$' + parseFloat(balance).toLocaleString('en-US', {minimumFractionDigits: 2});
+            
+            // Set initial state
+            setAccountState(status);
+        }
+
+        /**
+         * Set account state and update UI accordingly
+         * @param {string} state - Account state (unverified, verified, suspended, closed)
+         */
+        function setAccountState(state) {
+            currentState = state;
+            
+            // Update session storage
+            sessionStorage.setItem('accountStatus', state);
+            
+            // Get UI elements
+            const statusLabel = document.getElementById('statusLabel');
+            const statusText = document.getElementById('statusText');
+            const depositBtn = document.getElementById('depositBtn');
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            const transferBtn = document.getElementById('transferBtn');
+            const statementBtn = document.getElementById('statementBtn');
+            const behaviorDesc = document.getElementById('stateBehaviorDescription');
+            
+            // Update state buttons active state
+            document.querySelectorAll('.state-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('state' + state.charAt(0).toUpperCase() + state.slice(1)).classList.add('active');
+            
+            // Remove all status classes
+            statusLabel.className = 'status-label';
+            
+            // Apply state-specific behavior
+            switch(state) {
+                case 'unverified':
+                    statusLabel.classList.add('status-unverified');
+                    statusText.textContent = 'Unverified';
+                    // Unverified: Limited functionality
+                    depositBtn.disabled = false;
+                    withdrawBtn.disabled = true;
+                    transferBtn.disabled = true;
+                    statementBtn.disabled = false;
+                    behaviorDesc.textContent = 'Unverified accounts can only make deposits. Withdrawals and transfers are disabled until verified by admin.';
+                    showNotification('Account pending verification. Some features are limited.', 'warning');
+                    break;
+                    
+                case 'verified':
+                    statusLabel.classList.add('status-verified');
+                    statusText.textContent = 'Verified';
+                    // Verified: Full access
+                    depositBtn.disabled = false;
+                    withdrawBtn.disabled = false;
+                    transferBtn.disabled = false;
+                    statementBtn.disabled = false;
+                    behaviorDesc.textContent = 'All transactions are enabled for verified accounts.';
+                    break;
+                    
+                case 'suspended':
+                    statusLabel.classList.add('status-suspended');
+                    statusText.textContent = 'Suspended';
+                    // Suspended: No transactions, can view only
+                    depositBtn.disabled = true;
+                    withdrawBtn.disabled = true;
+                    transferBtn.disabled = true;
+                    statementBtn.disabled = false;
+                    behaviorDesc.textContent = 'Suspended accounts cannot perform any transactions. Only viewing statement is allowed. Contact support to appeal.';
+                    showNotification('Account is suspended. All transactions are disabled.', 'error');
+                    break;
+                    
+                case 'closed':
+                    statusLabel.classList.add('status-closed');
+                    statusText.textContent = 'Closed';
+                    // Closed: No access
+                    depositBtn.disabled = true;
+                    withdrawBtn.disabled = true;
+                    transferBtn.disabled = true;
+                    statementBtn.disabled = true;
+                    behaviorDesc.textContent = 'Closed accounts have no access to any features. All buttons are disabled.';
+                    showNotification('Account is closed. No actions available.', 'error');
+                    break;
+            }
+        }
+
+        /**
+         * Navigate to transaction page with specified type
+         * @param {string} type - Transaction type (deposit, withdraw, transfer)
+         */
+        function goToTransaction(type) {
+            // Check if action is allowed based on current state
+            if (currentState === 'closed') {
+                showNotification('Cannot perform transactions. Account is closed.', 'error');
+                return;
+            }
+            
+            if (currentState === 'suspended') {
+                showNotification('Cannot perform transactions. Account is suspended.', 'error');
+                return;
+            }
+            
+            if (currentState === 'unverified' && (type === 'withdraw' || type === 'transfer')) {
+                showNotification('Withdrawals and transfers require account verification.', 'warning');
+                return;
+            }
+            
+            // Store transaction type and navigate
+            sessionStorage.setItem('transactionType', type);
+            window.location.href = 'transaction.html?type=' + type;
+        }
+
+        /**
+         * View account statement
+         */
+        function viewStatement() {
+            if (currentState === 'closed') {
+                showNotification('Cannot view statement. Account is closed.', 'error');
+                return;
+            }
+            
+            showNotification('Statement downloaded successfully!', 'success');
+            
+            // Simulate statement view
+            const statement = `
+=================================
+        Engineering Bank Statement
+=================================
+Account Holder: ${document.getElementById('clientName').textContent}
+Account Number: ${document.getElementById('accountNumber').textContent}
+Statement Date: ${new Date().toLocaleDateString()}
+Current Balance: ${document.getElementById('balance').textContent}
+Status: ${currentState.toUpperCase()}
+=================================
+            `;
+            
+            console.log(statement);
+        }
+
+        /**
+         * Logout user
+         */
+        function logout() {
+            sessionStorage.clear();
+            showNotification('Logged out successfully', 'success');
+        }
+
+        /**
+         * Show notification message
+         * @param {string} message - Message to display
+         * @param {string} type - Notification type (success, error, warning, info)
+         */
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const icon = document.getElementById('notification-icon');
+            const text = document.getElementById('notification-message');
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            notification.className = 'notification visible notification-' + type;
+            icon.textContent = icons[type] || icons.info;
+            text.textContent = message;
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('visible');
+            }, 5000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Engineering Bank - Perform Transactions">
+    <title>Engineering Bank - Transaction</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <h1>🏦 Engineering Bank</h1>
+            <div class="navbar-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="transaction.html">Transactions</a>
+                <a href="index.html" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Notification Box -->
+        <div id="notification" class="notification">
+            <span id="notification-icon"></span>
+            <span id="notification-message"></span>
+        </div>
+
+        <!-- Transaction Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Make a Transaction</h2>
+                <p class="text-muted">Current Balance: <strong id="currentBalance">$1,000.00</strong></p>
+            </div>
+
+            <!-- Transaction Type Tabs -->
+            <div class="transaction-tabs">
+                <button id="tabDeposit" class="tab-btn active" onclick="switchTab('deposit')">
+                    💰 Deposit
+                </button>
+                <button id="tabWithdraw" class="tab-btn" onclick="switchTab('withdraw')">
+                    💸 Withdraw
+                </button>
+                <button id="tabTransfer" class="tab-btn" onclick="switchTab('transfer')">
+                    🔄 Transfer
+                </button>
+            </div>
+
+            <!-- Deposit Form -->
+            <form id="depositForm" class="transaction-form active" onsubmit="return handleDeposit(event)">
+                <div class="form-group">
+                    <label for="depositAmount">Amount to Deposit ($)</label>
+                    <input 
+                        type="number" 
+                        id="depositAmount" 
+                        name="depositAmount" 
+                        class="form-control" 
+                        placeholder="Enter amount (e.g., 100.00)"
+                        min="0.01"
+                        step="0.01"
+                    >
+                    <span id="depositAmount-error" class="error-message"></span>
+                </div>
+                <div class="form-group">
+                    <label for="depositSource">Source (Optional)</label>
+                    <input 
+                        type="text" 
+                        id="depositSource" 
+                        name="depositSource" 
+                        class="form-control" 
+                        placeholder="e.g., Cash, Check, Wire Transfer"
+                    >
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success">
+                        💰 Confirm Deposit
+                    </button>
+                    <a href="dashboard.html" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+
+            <!-- Withdraw Form -->
+            <form id="withdrawForm" class="transaction-form" onsubmit="return handleWithdraw(event)">
+                <div class="form-group">
+                    <label for="withdrawAmount">Amount to Withdraw ($)</label>
+                    <input 
+                        type="number" 
+                        id="withdrawAmount" 
+                        name="withdrawAmount" 
+                        class="form-control" 
+                        placeholder="Enter amount (e.g., 50.00)"
+                        min="0.01"
+                        step="0.01"
+                    >
+                    <span id="withdrawAmount-error" class="error-message"></span>
+                </div>
+                <div class="form-group">
+                    <label for="withdrawReason">Reason (Optional)</label>
+                    <input 
+                        type="text" 
+                        id="withdrawReason" 
+                        name="withdrawReason" 
+                        class="form-control" 
+                        placeholder="e.g., ATM, Bills, Personal"
+                    >
+                </div>
+                <div class="btn-group">
+                    <button type="submit" id="withdrawSubmitBtn" class="btn btn-primary">
+                        💸 Confirm Withdrawal
+                    </button>
+                    <a href="dashboard.html" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+
+            <!-- Transfer Form -->
+            <form id="transferForm" class="transaction-form" onsubmit="return handleTransfer(event)">
+                <div class="form-group">
+                    <label for="transferRecipient">Recipient Account Number</label>
+                    <input 
+                        type="text" 
+                        id="transferRecipient" 
+                        name="transferRecipient" 
+                        class="form-control" 
+                        placeholder="Enter 10-digit account number"
+                        maxlength="10"
+                    >
+                    <span id="transferRecipient-error" class="error-message"></span>
+                </div>
+                <div class="form-group">
+                    <label for="transferRecipientName">Recipient Name</label>
+                    <input 
+                        type="text" 
+                        id="transferRecipientName" 
+                        name="transferRecipientName" 
+                        class="form-control" 
+                        placeholder="Enter recipient's name"
+                    >
+                    <span id="transferRecipientName-error" class="error-message"></span>
+                </div>
+                <div class="form-group">
+                    <label for="transferAmount">Amount to Transfer ($)</label>
+                    <input 
+                        type="number" 
+                        id="transferAmount" 
+                        name="transferAmount" 
+                        class="form-control" 
+                        placeholder="Enter amount (e.g., 100.00)"
+                        min="0.01"
+                        step="0.01"
+                    >
+                    <span id="transferAmount-error" class="error-message"></span>
+                </div>
+                <div class="form-group">
+                    <label for="transferNote">Note (Optional)</label>
+                    <input 
+                        type="text" 
+                        id="transferNote" 
+                        name="transferNote" 
+                        class="form-control" 
+                        placeholder="e.g., Rent, Payment, Gift"
+                    >
+                </div>
+                <div class="btn-group">
+                    <button type="submit" id="transferSubmitBtn" class="btn btn-warning">
+                        🔄 Confirm Transfer
+                    </button>
+                    <a href="dashboard.html" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Transaction History Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Transaction History</h2>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Details</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionHistory">
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No transactions yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- State Testing Controls -->
+        <div class="testing-controls">
+            <h4>🧪 UI Testing - Transaction Validation Rules</h4>
+            <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 1rem;">
+                Input validation rules being tested:
+            </p>
+            <ul style="font-size: 0.875rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                <li><strong>Deposit:</strong> Amount must be positive number</li>
+                <li><strong>Withdraw:</strong> Amount must be positive and ≤ current balance</li>
+                <li><strong>Transfer:</strong> Recipient account must be 10 digits, amount ≤ balance</li>
+                <li><strong>All:</strong> Empty fields show validation errors</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Transaction Page JavaScript
+        // ========================================
+
+        // Current balance (loaded from session)
+        let currentBalance = 1000.00;
+        let transactions = [];
+
+        /**
+         * Initialize transaction page
+         */
+        function initTransaction() {
+            // Load balance from session
+            const storedBalance = sessionStorage.getItem('balance');
+            if (storedBalance) {
+                currentBalance = parseFloat(storedBalance);
+            }
+            updateBalanceDisplay();
+            
+            // Check account state
+            const status = sessionStorage.getItem('accountStatus') || 'verified';
+            applyStateRestrictions(status);
+            
+            // Get transaction type from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            if (type) {
+                switchTab(type);
+            }
+            
+            // Load transaction history
+            loadTransactionHistory();
+        }
+
+        /**
+         * Apply state-based restrictions to transaction tabs
+         * @param {string} state - Account state
+         */
+        function applyStateRestrictions(state) {
+            const tabWithdraw = document.getElementById('tabWithdraw');
+            const tabTransfer = document.getElementById('tabTransfer');
+            const tabDeposit = document.getElementById('tabDeposit');
+            
+            switch(state) {
+                case 'unverified':
+                    tabWithdraw.disabled = true;
+                    tabTransfer.disabled = true;
+                    showNotification('Unverified account: Only deposits are allowed.', 'warning');
+                    break;
+                case 'suspended':
+                    tabDeposit.disabled = true;
+                    tabWithdraw.disabled = true;
+                    tabTransfer.disabled = true;
+                    showNotification('Suspended account: All transactions are disabled.', 'error');
+                    break;
+                case 'closed':
+                    tabDeposit.disabled = true;
+                    tabWithdraw.disabled = true;
+                    tabTransfer.disabled = true;
+                    showNotification('Closed account: No transactions allowed.', 'error');
+                    break;
+            }
+        }
+
+        /**
+         * Switch between transaction tabs
+         * @param {string} tab - Tab name (deposit, withdraw, transfer)
+         */
+        function switchTab(tab) {
+            // Check if tab is disabled
+            const tabBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+            if (tabBtn && tabBtn.disabled) {
+                showNotification('This transaction type is not available for your account.', 'error');
+                return;
+            }
+            
+            // Hide all forms
+            document.querySelectorAll('.transaction-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected form and activate tab
+            document.getElementById(tab + 'Form').classList.add('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            
+            // Clear any errors
+            clearErrors();
+        }
+
+        /**
+         * Handle deposit form submission
+         * @param {Event} event - Form submit event
+         */
+        function handleDeposit(event) {
+            event.preventDefault();
+            clearErrors();
+            
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const source = document.getElementById('depositSource').value || 'Cash';
+            
+            // Validate amount
+            if (!amount || isNaN(amount)) {
+                showError('depositAmount', 'Please enter a valid amount');
+                return false;
+            }
+            
+            if (amount <= 0) {
+                showError('depositAmount', 'Amount must be greater than zero');
+                return false;
+            }
+            
+            if (amount > 10000) {
+                showError('depositAmount', 'Maximum deposit is $10,000 per transaction');
+                return false;
+            }
+            
+            // Process deposit
+            currentBalance += amount;
+            updateBalanceDisplay();
+            sessionStorage.setItem('balance', currentBalance.toFixed(2));
+            
+            // Add to history
+            addTransaction('Deposit', source, amount, 'success');
+            
+            showNotification(`Successfully deposited $${amount.toFixed(2)}`, 'success');
+            document.getElementById('depositForm').reset();
+            
+            return false;
+        }
+
+        /**
+         * Handle withdraw form submission
+         * @param {Event} event - Form submit event
+         */
+        function handleWithdraw(event) {
+            event.preventDefault();
+            clearErrors();
+            
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const reason = document.getElementById('withdrawReason').value || 'ATM';
+            
+            // Validate amount
+            if (!amount || isNaN(amount)) {
+                showError('withdrawAmount', 'Please enter a valid amount');
+                return false;
+            }
+            
+            if (amount <= 0) {
+                showError('withdrawAmount', 'Amount must be greater than zero');
+                return false;
+            }
+            
+            if (amount > currentBalance) {
+                showError('withdrawAmount', `Insufficient funds. Available balance: $${currentBalance.toFixed(2)}`);
+                return false;
+            }
+            
+            if (amount > 5000) {
+                showError('withdrawAmount', 'Maximum withdrawal is $5,000 per transaction');
+                return false;
+            }
+            
+            // Process withdrawal
+            currentBalance -= amount;
+            updateBalanceDisplay();
+            sessionStorage.setItem('balance', currentBalance.toFixed(2));
+            
+            // Add to history
+            addTransaction('Withdrawal', reason, -amount, 'success');
+            
+            showNotification(`Successfully withdrew $${amount.toFixed(2)}`, 'success');
+            document.getElementById('withdrawForm').reset();
+            
+            return false;
+        }
+
+        /**
+         * Handle transfer form submission
+         * @param {Event} event - Form submit event
+         */
+        function handleTransfer(event) {
+            event.preventDefault();
+            clearErrors();
+            
+            const recipient = document.getElementById('transferRecipient').value.trim();
+            const recipientName = document.getElementById('transferRecipientName').value.trim();
+            const amount = parseFloat(document.getElementById('transferAmount').value);
+            const note = document.getElementById('transferNote').value || 'Transfer';
+            
+            let isValid = true;
+            
+            // Validate recipient account
+            if (!recipient) {
+                showError('transferRecipient', 'Recipient account number is required');
+                isValid = false;
+            } else if (!/^\d{10}$/.test(recipient)) {
+                showError('transferRecipient', 'Account number must be exactly 10 digits');
+                isValid = false;
+            } else if (recipient === sessionStorage.getItem('accountNumber')) {
+                showError('transferRecipient', 'Cannot transfer to your own account');
+                isValid = false;
+            }
+            
+            // Validate recipient name
+            if (!recipientName) {
+                showError('transferRecipientName', 'Recipient name is required');
+                isValid = false;
+            } else if (recipientName.length < 2) {
+                showError('transferRecipientName', 'Please enter a valid name');
+                isValid = false;
+            }
+            
+            // Validate amount
+            if (!amount || isNaN(amount)) {
+                showError('transferAmount', 'Please enter a valid amount');
+                isValid = false;
+            } else if (amount <= 0) {
+                showError('transferAmount', 'Amount must be greater than zero');
+                isValid = false;
+            } else if (amount > currentBalance) {
+                showError('transferAmount', `Insufficient funds. Available balance: $${currentBalance.toFixed(2)}`);
+                isValid = false;
+            } else if (amount > 10000) {
+                showError('transferAmount', 'Maximum transfer is $10,000 per transaction');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                showNotification('Please fix the errors above', 'error');
+                return false;
+            }
+            
+            // Process transfer
+            currentBalance -= amount;
+            updateBalanceDisplay();
+            sessionStorage.setItem('balance', currentBalance.toFixed(2));
+            
+            // Add to history
+            addTransaction('Transfer', `To: ${recipientName} (${recipient})`, -amount, 'success');
+            
+            showNotification(`Successfully transferred $${amount.toFixed(2)} to ${recipientName}`, 'success');
+            document.getElementById('transferForm').reset();
+            
+            return false;
+        }
+
+        /**
+         * Update balance display
+         */
+        function updateBalanceDisplay() {
+            document.getElementById('currentBalance').textContent = 
+                '$' + currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        /**
+         * Add transaction to history
+         * @param {string} type - Transaction type
+         * @param {string} details - Transaction details
+         * @param {number} amount - Transaction amount
+         * @param {string} status - Transaction status
+         */
+        function addTransaction(type, details, amount, status) {
+            const transaction = {
+                date: new Date().toLocaleDateString(),
+                type: type,
+                details: details,
+                amount: amount,
+                status: status
+            };
+            
+            transactions.unshift(transaction);
+            saveTransactionHistory();
+            loadTransactionHistory();
+        }
+
+        /**
+         * Load transaction history from session
+         */
+        function loadTransactionHistory() {
+            const stored = sessionStorage.getItem('transactions');
+            if (stored) {
+                transactions = JSON.parse(stored);
+            }
+            
+            const tbody = document.getElementById('transactionHistory');
+            
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No transactions yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = transactions.map(t => `
+                <tr>
+                    <td>${t.date}</td>
+                    <td>${t.type}</td>
+                    <td>${t.details}</td>
+                    <td style="color: ${t.amount >= 0 ? 'var(--status-verified)' : 'var(--status-suspended)'};">
+                        ${t.amount >= 0 ? '+' : ''}$${Math.abs(t.amount).toFixed(2)}
+                    </td>
+                    <td><span class="status-label status-verified" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">${t.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        /**
+         * Save transaction history to session
+         */
+        function saveTransactionHistory() {
+            sessionStorage.setItem('transactions', JSON.stringify(transactions));
+        }
+
+        /**
+         * Show error for a specific field
+         * @param {string} fieldId - Field ID
+         * @param {string} message - Error message
+         */
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const error = document.getElementById(fieldId + '-error');
+            
+            if (field) field.classList.add('error');
+            if (error) {
+                error.textContent = message;
+                error.classList.add('visible');
+            }
+        }
+
+        /**
+         * Clear all error states
+         */
+        function clearErrors() {
+            document.querySelectorAll('.form-control').forEach(field => {
+                field.classList.remove('error');
+            });
+            document.querySelectorAll('.error-message').forEach(error => {
+                error.classList.remove('visible');
+            });
+        }
+
+        /**
+         * Show notification message
+         * @param {string} message - Message to display
+         * @param {string} type - Notification type
+         */
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const icon = document.getElementById('notification-icon');
+            const text = document.getElementById('notification-message');
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            notification.className = 'notification visible notification-' + type;
+            icon.textContent = icons[type] || icons.info;
+            text.textContent = message;
+            
+            setTimeout(() => {
+                notification.classList.remove('visible');
+            }, 5000);
+        }
+
+        /**
+         * Logout user
+         */
+        function logout() {
+            sessionStorage.clear();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initTransaction);
+    </script>
+</body>
+</html>
